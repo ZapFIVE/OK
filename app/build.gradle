@@ -24,7 +24,7 @@ android {
 
     signingConfigs {
         sign {
-            //默认local.properties不加入版本控制中
+            // 默认local.properties不加入版本控制中
             Properties properties = new Properties()
             properties.load(project.rootProject.file('local.properties').newDataInputStream())
             def keystore = properties.getProperty("KEY_STORE")
@@ -47,8 +47,6 @@ android {
             minifyEnabled false
             // 不进行zip对齐
             zipAlignEnabled false
-            // 不混淆资源
-            shrinkResources false
             // 为包名添加后缀，使调试与正式包可以并存
             applicationIdSuffix ".debug"
 
