@@ -1,8 +1,8 @@
-¹ØÓÚÕâÒ»¸öÏîÄ¿£¬ÇëÏêÇé¹Ø×¢ÎÒµÄ²©¿Í
+å…³äºè¿™ä¸€ä¸ªé¡¹ç›®ï¼Œè¯·è¯¦æƒ…å…³æ³¨æˆ‘çš„åšå®¢
 
-[Î×Ğ¡ÅÖµÄ²©¿Í](http://www.jianshu.com/users/e64a5d3e7e05/latest_articles)
+[å·«å°èƒ–çš„åšå®¢](http://www.jianshu.com/users/e64a5d3e7e05/latest_articles)
 
-ÏîÄ¿¿ËÂ¡ºó£¬ÇëÔÚlocal.propertiesÖĞÌí¼Óµ÷ÊÔÃÜÔ¿ÒÀÀµ
+é¡¹ç›®å…‹éš†åï¼Œè¯·åœ¨local.propertiesä¸­æ·»åŠ è°ƒè¯•å¯†é’¥ä¾èµ–
 
 ```
 KEY_STORE=../resources/debug.jks
