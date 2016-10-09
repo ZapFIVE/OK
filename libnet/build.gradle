@@ -1,0 +1,61 @@
+apply plugin: 'com.android.application'
+
+android {
+
+    // 设置默认没有发布类型
+    publishNonDefault true
+
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    productFlavors {
+        retrofit {
+            resValue("string","lib_net","Retrofit2")
+
+            dependencies {
+                retrofitCompile fileTree(dir: 'src/retrofit/libs', include: ['*.jar'])
+                retrofitCompile 'com.squareup.retrofit2:retrofit:2.1.0'
+            }
+        }
+
+        volley {
+            resValue("string","lib_net","Volley")
+
+            // 防止org.apache.http找不到
+            useLibrary 'org.apache.http.legacy'
+
+            dependencies {
+                volleyCompile fileTree(dir: 'src/volley/libs', include: ['*.jar'])
+                volleyCompile 'com.android.volley:volley:1.0.0'
+                volleyCompile 'com.squareup.okio:okio:1.8.0'
+                volleyCompile 'com.squareup.okhttp3:okhttp:3.3.0'
+            }
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'com.android.support:appcompat-v7:24.2.1'
+    testCompile 'junit:junit:4.12'
+
+    compile 'com.google.code.gson:gson:2.7'
+}
+
