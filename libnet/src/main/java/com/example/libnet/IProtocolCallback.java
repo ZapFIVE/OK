@@ -12,7 +12,7 @@ public interface IProtocolCallback {
      * @param protocol 本次协议对象
      * @param response   返回类实体
      */
-    public abstract void onResponse(BaseProtocol protocol, HttpResponse response);
+    void onResponse(BaseProtocol protocol, HttpResponse response);
 
     /**
      * 请求出错
@@ -20,5 +20,5 @@ public interface IProtocolCallback {
      * @param protocol 本次协议对象
      * @param throwable 异常信息
      */
-    public abstract void onError(BaseProtocol protocol, Throwable throwable);
+    void onError(BaseProtocol protocol, Throwable throwable);
 }

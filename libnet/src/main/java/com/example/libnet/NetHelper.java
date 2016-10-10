@@ -146,12 +146,22 @@ public enum  NetHelper implements IProxyNet{
         }
 
         @Override
-        public void onResponse(BaseProtocol protocol, HttpResponse response) {
+        public void onResponse(BaseProtocol protocol, final HttpResponse response) {
             super.onResponse(protocol, response);
-            ICache cache = protocol.getCacheStrategy();
+            final ICache cache = protocol.getCacheStrategy();
             // 缓存
             if (cache != null) {
-                cache.put(mRequest, response);
+                // 防止耗时操作
+                if (isThreadInUI()) {
+                    mCacheExecutor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            cache.put(mRequest, response);
+                        }
+                    });
+                } else {
+                    cache.put(mRequest, response);
+                }
             }
         }
     }
@@ -224,7 +234,7 @@ public enum  NetHelper implements IProxyNet{
          *
          * @return
          */
-        private boolean isThreadInUI() {
+        protected boolean isThreadInUI() {
             return Thread.currentThread() == Looper.getMainLooper().getThread();
         }
 
@@ -234,7 +244,7 @@ public enum  NetHelper implements IProxyNet{
          * @param protocol
          * @return
          */
-        private boolean isRunDirect(final BaseProtocol protocol) {
+        protected boolean isRunDirect(final BaseProtocol protocol) {
             boolean isOkInUI = isThreadInUI() && protocol.isUIResponse();
             boolean isOkInNonUI = !isThreadInUI() && !protocol.isUIResponse();
 

@@ -1,23 +1,17 @@
-package com.example.libnet.sample.net;
+package com.example.libnet.converter.impl;
 
-import com.example.libnet.IConverter;
+import com.example.libnet.converter.BaseConverter;
 import com.google.gson.Gson;
-
-import java.nio.charset.Charset;
 
 /**
  * Created by whr on 2016/10/9.
  */
-public class GsonConverter implements IConverter {
+public class GsonConverter extends BaseConverter {
     /**
      * 默认HEAD
      */
     public static final String DEFAULT_HEAD_KEY = "Content-type";
     public static final String DEFAULT_HEAD_VALUE = "application/json; charset=UTF-8";
-    /**
-     * 字符语言
-     */
-    public static final Charset UTF_8 = Charset.forName("UTF-8");
 
     @Override
     public byte[] requestBodyConverter(Object body) {

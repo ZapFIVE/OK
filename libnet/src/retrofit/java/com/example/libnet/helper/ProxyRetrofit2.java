@@ -116,6 +116,7 @@ public class ProxyRetrofit2 extends BaseProxyNet{
 
         mRetrofit = new Retrofit.Builder()
             .baseUrl(config.getBaseUrl())
+            .addConverterFactory(new ByteConverter())
             .build();
     }
 

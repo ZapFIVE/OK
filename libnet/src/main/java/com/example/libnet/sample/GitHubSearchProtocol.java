@@ -47,10 +47,12 @@ public class GitHubSearchProtocol extends TestBaseProtocol {
      * @param order
      */
     public void request(String query, String sort, String order, BaseProtocolCallback callback) {
+        // putHead();
         putParams("q", query);
         putParams("sort", sort);
         putParams("order", order);
 
+        // setBody();
         request(EnumRequest.GET, callback);
     }
 }

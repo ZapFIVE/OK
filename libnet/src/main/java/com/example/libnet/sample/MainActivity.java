@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import com.example.libnet.R;
+import com.example.libnet.sample.bean.KeyResult;
 import com.example.libnet.sample.bean.Root;
 import com.example.libnet.sample.net.NetConfig;
 import com.example.libnet.sample.net.TestBaseProtocolCallback;
@@ -27,13 +28,28 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Root data) {
                 super.onSuccess(data);
-                Log.d(TAG, "success data:" + data.toString() + ", isInUI:" + isThreadInUI());
+                Log.d(TAG, "GitHubSearchProtocol success data:" + data.toString() + ", isInUI:" + isThreadInUI());
             }
 
             @Override
             public void onFail(int errorCode) {
                 super.onFail(errorCode);
-                Log.d(TAG, "fail code:" + errorCode + ", isInUI:" + isThreadInUI());
+                Log.d(TAG, "GitHubSearchProtocol fail code:" + errorCode + ", isInUI:" + isThreadInUI());
+            }
+        });
+
+        KeyExtraProtocol keyExtraProtocol = new KeyExtraProtocol();
+        keyExtraProtocol.request("a3e65eed331fbbf02e7ed35e5f6b5a55", "这是一段测试的文字", new TestBaseProtocolCallback<KeyResult>() {
+            @Override
+            public void onSuccess(KeyResult data) {
+                super.onSuccess(data);
+                Log.d(TAG, "KeyExtraProtocol success data:" + data.toString() + ", isInUI:" + isThreadInUI());
+            }
+
+            @Override
+            public void onFail(int errorCode) {
+                super.onFail(errorCode);
+                Log.d(TAG, "KeyExtraProtocol fail code:" + errorCode + ", isInUI:" + isThreadInUI());
             }
         });
     }

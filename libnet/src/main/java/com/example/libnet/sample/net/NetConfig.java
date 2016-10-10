@@ -7,6 +7,7 @@ import com.example.libnet.ICache;
 import com.example.libnet.IConverter;
 import com.example.libnet.INetConfig;
 import com.example.libnet.R;
+import com.example.libnet.converter.impl.GsonConverter;
 
 /**
  * Created by whr on 2016/10/8.
