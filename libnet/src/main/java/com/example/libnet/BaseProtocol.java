@@ -1,21 +1,15 @@
 package com.example.libnet;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
-import com.example.libnet.cache.ICache;
-import com.example.libnet.helper.BaseProxyNet;
+import com.example.libnet.exception.opt.NullPointerUrlException;
 import com.example.libnet.http.EnumPriority;
 import com.example.libnet.http.EnumRequest;
 import com.example.libnet.http.HttpRequest;
 
-import java.lang.reflect.Constructor;
 import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Created by whr on 2016/10/8.
@@ -49,18 +43,13 @@ public abstract class BaseProtocol<T> implements INetConfig{
     private T mBody = null;
 
     /**
-     * 优先级线程池
+     * 是否从缓存中获取
      */
-    private HashMap<EnumPriority, IProxyNet> mProxyNets;
-
+    protected boolean mIsFromCache;
     /**
-     * 线程池
+     * 是否在主线程回调
      */
-    protected static final ExecutorService cacheExecutor = Executors.newCachedThreadPool();
-    /**
-     * 主线程Handler
-     */
-    protected static final Handler handler = new Handler(Looper.getMainLooper());
+    protected boolean mIsUiResponse;
 
     /**
      * 默认构造函数
@@ -73,26 +62,10 @@ public abstract class BaseProtocol<T> implements INetConfig{
         }
         mConfig = config;
 
-        mProxyNets = new HashMap<>();
+        mIsFromCache = mConfig.isFromCache();
+        mIsUiResponse = mConfig.isUIResponse();
 
-        try {
-            Class cls = Class.forName(BaseProxyNet.class.getPackage().getName() + ".Proxy" + mConfig.getLibNet());
-            // 方法传入的类型
-            Class[] paramTypes = {INetConfig.class};
-            // 方法传入的参数
-            Object[] params = {mConfig};
-            // 创建构造器
-            Constructor constructor = cls.getConstructor(paramTypes);
-
-            // 生成对应优先级的线程池
-            for (EnumPriority priority : EnumPriority.values()) {
-                IProxyNet proxyNet = (IProxyNet) constructor.newInstance(params);
-                mProxyNets.put(priority, proxyNet);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new IllegalStateException("getLibNet required, check it; can not be empty or null or illegal.");
-        }
+        NetHelper.INSTANCE.init(config);
     }
 
     @NonNull
@@ -108,18 +81,8 @@ public abstract class BaseProtocol<T> implements INetConfig{
     }
 
     @Override
-    public boolean isEnableCache() {
-        return mConfig.isEnableCache();
-    }
-
-    @Override
     public boolean isUIResponse() {
-        return mConfig.isUIResponse();
-    }
-
-    @Override
-    public ICache getCacheStrategy() {
-        return mConfig.getCacheStrategy();
+        return mIsUiResponse;
     }
 
     @NonNull
@@ -132,6 +95,34 @@ public abstract class BaseProtocol<T> implements INetConfig{
     @Override
     public final String getLibNet() {
         return mConfig.getLibNet();
+    }
+
+    @Override
+    public boolean isFromCache() {
+        return mIsFromCache;
+    }
+
+    @Override
+    public ICache getCacheStrategy() {
+        return mConfig.getCacheStrategy();
+    }
+
+    /**
+     * 设置是否从缓存中获取
+     *
+     * @param isFromCache
+     */
+    public void setFromCache(boolean isFromCache) {
+        this.mIsFromCache = isFromCache;
+    }
+
+    /**
+     * 设置是否在主线程上回调
+     *
+     * @param isUiResponse
+     */
+    public void setUiResponse(boolean isUiResponse) {
+        this.mIsUiResponse = isUiResponse;
     }
 
     /**
@@ -248,6 +239,15 @@ public abstract class BaseProtocol<T> implements INetConfig{
     }
 
     /**
+     * 获取协议的CacheKey
+     *
+     * @return
+     */
+    public String getProtocolCacheKey() {
+        return this.getClass().getName() + "$" + this.hashCode();
+    }
+
+    /**
      * 请求路径
      *
      * @return
@@ -258,6 +258,7 @@ public abstract class BaseProtocol<T> implements INetConfig{
      * 取消请求
      */
     public void cancel() {
+        NetHelper.INSTANCE.cancel(this);
     }
 
     /**
@@ -268,7 +269,7 @@ public abstract class BaseProtocol<T> implements INetConfig{
     public void request(EnumRequest request, BaseProtocolCallback callback) {
         String baseUrl = mConfig.getBaseUrl();
         if (TextUtils.isEmpty(baseUrl)) {
-            throw new NullPointerException("BaseUrl can not be null or empty");
+            throw new NullPointerUrlException("BaseUrl can not be null or empty");
         }
         request(request, mConfig.getBaseUrl() + getPath(), callback);
     }
@@ -280,22 +281,24 @@ public abstract class BaseProtocol<T> implements INetConfig{
      * @param url 请求地址
      * @param callback    请求回调
      */
-    public void request(EnumRequest request, String url, BaseProtocolCallback callback) {
-        // 如果有缓存,执行缓存
+    public void request(final EnumRequest request, final String url, final BaseProtocolCallback callback) {
+        requestFromProxyNet(request, url, callback);
+    }
 
-
-        // 检查网络代理类
-        if (mProxyNets == null || mProxyNets.isEmpty() || !mProxyNets.containsKey(getPriority())) {
-            throw new IllegalStateException("error, check it; not found proxy net");
-        }
-
+    /**
+     * 从网络上获取
+     *
+     * @param request 请求类型 get post ...
+     * @param url 请求地址
+     * @param callback    请求回调
+     */
+    private void requestFromProxyNet(EnumRequest request, String url, BaseProtocolCallback callback) {
         HttpRequest opt = new HttpRequest.Builder(request, url)
             .setHeadMaps(mHeadMaps)
             .setParamMaps(mParamMaps)
             .setBody(mConfig.getConverterStrategy().requestBodyConverter(mBody))
             .build();
 
-        // 发起请求
-        mProxyNets.get(getPriority()).request(this, opt, callback);
+        NetHelper.INSTANCE.request(this, opt, callback);
     }
 }

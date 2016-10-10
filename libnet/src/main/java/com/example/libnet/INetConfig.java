@@ -3,8 +3,6 @@ package com.example.libnet;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import com.example.libnet.cache.ICache;
-
 /**
  * Created by whr on 2016/10/8.
  *
@@ -27,12 +25,6 @@ public interface INetConfig {
      */
     @NonNull
     String getBaseUrl();
-    /**
-     * 是否默认开启缓存
-     *
-     * @return 是否开启缓存
-     */
-    boolean isEnableCache();
 
     /**
      * 是否需要在主线程上回调
@@ -42,12 +34,18 @@ public interface INetConfig {
     boolean isUIResponse();
 
     /**
+     * 是否从缓存中获取
+     *
+     * @return
+     */
+    boolean isFromCache();
+
+    /**
      * 获取缓存策略
      *
-     * @return 缓存策略
+     * @return
      */
     ICache getCacheStrategy();
-
     /**
      * 获取转换策略
      *

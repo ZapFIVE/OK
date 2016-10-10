@@ -1,6 +1,7 @@
 package com.example.libnet.sample;
 
 import android.os.Bundle;
+import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
@@ -26,14 +27,23 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Root data) {
                 super.onSuccess(data);
-                Log.d(TAG, "success data:" + data.toString());
+                Log.d(TAG, "success data:" + data.toString() + ", isInUI:" + isThreadInUI());
             }
 
             @Override
             public void onFail(int errorCode) {
                 super.onFail(errorCode);
-                Log.d(TAG, "fail code:" + errorCode);
+                Log.d(TAG, "fail code:" + errorCode + ", isInUI:" + isThreadInUI());
             }
         });
+    }
+
+    /**
+     * 是否线程运行在主线程上
+     *
+     * @return
+     */
+    private boolean isThreadInUI() {
+        return Thread.currentThread() == Looper.getMainLooper().getThread();
     }
 }

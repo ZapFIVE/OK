@@ -1,5 +1,8 @@
 package com.example.libnet.http;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.HashMap;
 
 /**
@@ -7,7 +10,7 @@ import java.util.HashMap;
  *
  * 请求类实体
  */
-public class HttpRequest {
+public class HttpRequest implements Parcelable {
     /**
      * 请求类型
      */
@@ -24,7 +27,7 @@ public class HttpRequest {
     /**
      * 请求参数列表
      */
-    private final HashMap<String, String> mParamMaps;
+    private final HashMap<String, String> mParamMaps = new HashMap<>();
 
     /**
      * 请求body 对象
@@ -49,8 +52,10 @@ public class HttpRequest {
             mHeadMaps.putAll(heads);
         }
 
-
-        mParamMaps = params;
+        mParamMaps.clear();
+        if (params != null) {
+            mParamMaps.putAll(params);
+        }
         mBody = body;
     }
 
@@ -73,6 +78,8 @@ public class HttpRequest {
     public byte[] getBody() {
         return mBody;
     }
+
+
 
     /**
      * 构造器{@link HttpRequest}.
@@ -156,4 +163,49 @@ public class HttpRequest {
             return new HttpRequest(mRequest, mUrl, mHeadMaps, mParamMaps, mBody);
         }
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(this.mRequest == null ? -1 : this.mRequest.ordinal());
+        dest.writeString(this.mUrl);
+        dest.writeSerializable(this.mHeadMaps);
+        dest.writeSerializable(this.mParamMaps);
+        dest.writeByteArray(this.mBody);
+    }
+
+    protected HttpRequest(Parcel in) {
+        int tmpMRequest = in.readInt();
+        this.mRequest = tmpMRequest == -1 ? null : EnumRequest.values()[tmpMRequest];
+        this.mUrl = in.readString();
+        HashMap<String, String> heads = (HashMap<String, String>) in.readSerializable();
+        HashMap<String, String> params = (HashMap<String, String>) in.readSerializable();
+
+        mHeadMaps.clear();
+        if (heads != null) {
+            mHeadMaps.putAll(heads);
+        }
+
+        mParamMaps.clear();
+        if (params != null) {
+            mParamMaps.putAll(params);
+        }
+        this.mBody = in.createByteArray();
+    }
+
+    public static final Parcelable.Creator<HttpRequest> CREATOR = new Parcelable.Creator<HttpRequest>() {
+        @Override
+        public HttpRequest createFromParcel(Parcel source) {
+            return new HttpRequest(source);
+        }
+
+        @Override
+        public HttpRequest[] newArray(int size) {
+            return new HttpRequest[size];
+        }
+    };
 }

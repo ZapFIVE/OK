@@ -1,8 +1,8 @@
 package com.example.libnet.helper;
 
 import com.example.libnet.BaseProtocol;
-import com.example.libnet.BaseProtocolCallback;
 import com.example.libnet.INetConfig;
+import com.example.libnet.IProtocolCallback;
 import com.example.libnet.http.HttpRequest;
 import com.example.libnet.http.HttpResponse;
 
@@ -121,19 +121,22 @@ public class ProxyRetrofit2 extends BaseProxyNet{
 
     @Override
     public void cancel(BaseProtocol protocol) {
-        Call<ResponseBody> call = mCallbackCache.remove(getProtocolCacheKey(protocol));
+        Call<ResponseBody> call = mCallbackCache.remove(protocol.getProtocolCacheKey());
         if (call != null && !call.isExecuted() && !call.isCanceled()) {
             call.cancel();
         }
     }
 
     @Override
-    public void request(final BaseProtocol protocol, HttpRequest request, final BaseProtocolCallback callback) {
+    public void request(final BaseProtocol protocol, HttpRequest request, final IProtocolCallback callback) {
         IProxyApi api = mRetrofit.create(IProxyApi.class);
         Call<ResponseBody> call = chooseFromType(api, request);
         call.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                // 清除缓存
+                mCallbackCache.remove(protocol.getProtocolCacheKey());
+
                 // 添加表头
                 HashMap<String, String> heads = null;
                 Headers headers = response.headers();
@@ -153,11 +156,14 @@ public class ProxyRetrofit2 extends BaseProxyNet{
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
+                // 清除缓存
+                mCallbackCache.remove(protocol.getProtocolCacheKey());
+                // 响应数据回调
                 callback.onError(protocol, t);
             }
         });
 
-        mCallbackCache.put(getProtocolCacheKey(protocol), call);
+        mCallbackCache.put(protocol.getProtocolCacheKey(), call);
     }
 
     /**

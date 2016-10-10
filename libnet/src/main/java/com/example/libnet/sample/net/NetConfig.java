@@ -3,10 +3,10 @@ package com.example.libnet.sample.net;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+import com.example.libnet.ICache;
 import com.example.libnet.IConverter;
 import com.example.libnet.INetConfig;
 import com.example.libnet.R;
-import com.example.libnet.cache.ICache;
 
 /**
  * Created by whr on 2016/10/8.
@@ -19,7 +19,7 @@ public enum NetConfig implements INetConfig {
     /**
      * Gson转换类
      */
-    private GsonConverter mGsonConverter = new GsonConverter();
+    private IConverter mGsonConverter = new GsonConverter();
 
     private Context mContext = null;
 
@@ -45,12 +45,12 @@ public enum NetConfig implements INetConfig {
     }
 
     @Override
-    public boolean isEnableCache() {
-        return true;
+    public boolean isUIResponse() {
+        return false;
     }
 
     @Override
-    public boolean isUIResponse() {
+    public boolean isFromCache() {
         return false;
     }
 
@@ -70,4 +70,6 @@ public enum NetConfig implements INetConfig {
     public final String getLibNet() {
         return getContext().getString(R.string.lib_net);
     }
+
+
 }

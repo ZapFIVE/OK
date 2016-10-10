@@ -1,8 +1,8 @@
 package com.example.libnet.helper;
 
 import com.example.libnet.BaseProtocol;
-import com.example.libnet.BaseProtocolCallback;
 import com.example.libnet.INetConfig;
+import com.example.libnet.IProtocolCallback;
 import com.example.libnet.IProxyNet;
 import com.example.libnet.http.HttpRequest;
 
@@ -27,17 +27,7 @@ public abstract class BaseProxyNet implements IProxyNet{
     }
 
     @Override
-    public void request(BaseProtocol protocol, HttpRequest request, BaseProtocolCallback callback) {
+    public void request(BaseProtocol protocol, HttpRequest request, IProtocolCallback callback) {
 
-    }
-
-    /**
-     * 获取缓存的Key值
-     *
-     * @param protocol 协议类
-     * @return 缓存的key值
-     */
-    public String getProtocolCacheKey(BaseProtocol protocol) {
-        return protocol.getClass().getName() + "$" + protocol.hashCode();
     }
 }

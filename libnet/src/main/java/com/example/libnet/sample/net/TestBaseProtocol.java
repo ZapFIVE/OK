@@ -12,4 +12,13 @@ public abstract class TestBaseProtocol<T> extends BaseProtocol<T> {
         super(NetConfig.INSTANCE);
     }
 
+    @Override
+    public boolean isFromCache() {
+        return super.isFromCache();
+    }
+
+    @Override
+    public boolean isUIResponse() {
+        return super.isUIResponse();
+    }
 }

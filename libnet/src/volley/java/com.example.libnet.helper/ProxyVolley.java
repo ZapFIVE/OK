@@ -4,8 +4,8 @@ import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.VolleyError;
 import com.example.libnet.BaseProtocol;
-import com.example.libnet.BaseProtocolCallback;
 import com.example.libnet.INetConfig;
+import com.example.libnet.IProtocolCallback;
 import com.example.libnet.http.HttpRequest;
 import com.example.libnet.http.HttpResponse;
 import com.yong.volleyok.HttpClient;
@@ -35,7 +35,7 @@ public class ProxyVolley extends BaseProxyNet{
 
     @Override
     public void cancel(BaseProtocol protocol) {
-        Request call = mCallbackCache.remove(getProtocolCacheKey(protocol));
+        Request call = mCallbackCache.remove(protocol.getProtocolCacheKey());
         if (call != null && !call.isCanceled()) {
             call.cancel();
         }
@@ -68,7 +68,7 @@ public class ProxyVolley extends BaseProxyNet{
     }
 
     @Override
-    public void request(final BaseProtocol protocol, final HttpRequest request, final BaseProtocolCallback callback) {
+    public void request(final BaseProtocol protocol, final HttpRequest request, final IProtocolCallback callback) {
         com.yong.volleyok.HttpRequest httpRequest = new com.yong.volleyok.HttpRequest.Builder(request.getUrl())
             .setMethod(chooseFromType(request))
             .addheader(request.getHeadMaps())
@@ -77,15 +77,21 @@ public class ProxyVolley extends BaseProxyNet{
         Request call = mClient.netRequest(httpRequest, new HttpListener<NetworkResponse>() {
             @Override
             public void onSuccess(NetworkResponse result) {
+                // 清除缓存
+                mCallbackCache.remove(protocol.getProtocolCacheKey());
+                // 响应数据回调
                 callback.onResponse(protocol, new HttpResponse(result.statusCode, result.data, new HashMap<>(result.headers)));
             }
 
             @Override
             public void onError(VolleyError error) {
+                // 清除缓存
+                mCallbackCache.remove(protocol.getProtocolCacheKey());
+                // 响应错误回调
                 callback.onError(protocol, error);
             }
         });
 
-        mCallbackCache.put(getProtocolCacheKey(protocol), call);
+        mCallbackCache.put(protocol.getProtocolCacheKey(), call);
     }
 }

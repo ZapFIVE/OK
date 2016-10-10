@@ -22,5 +22,5 @@ public interface IProxyNet {
      * @param request  请求类型
      * @param callback 请求回调
      */
-    void request(BaseProtocol protocol, HttpRequest request, BaseProtocolCallback callback);
+    void request(BaseProtocol protocol, HttpRequest request, IProtocolCallback callback);
 }
