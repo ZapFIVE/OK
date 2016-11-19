@@ -1,5 +1,6 @@
 package com.example.libnet.converter;
 
+
 import com.example.libnet.IConverter;
 
 import java.nio.charset.Charset;
@@ -10,7 +11,7 @@ import java.nio.charset.Charset;
  *
  * @param <T>
  */
-public abstract class BaseConverter<T> implements IConverter<T>{
+public abstract class BaseConverter<T> implements IConverter<T> {
     /**
      * 字符语言
      */

@@ -197,7 +197,7 @@ public class HttpRequest implements Parcelable {
         this.mBody = in.createByteArray();
     }
 
-    public static final Parcelable.Creator<HttpRequest> CREATOR = new Parcelable.Creator<HttpRequest>() {
+    public static final Creator<HttpRequest> CREATOR = new Creator<HttpRequest>() {
         @Override
         public HttpRequest createFromParcel(Parcel source) {
             return new HttpRequest(source);

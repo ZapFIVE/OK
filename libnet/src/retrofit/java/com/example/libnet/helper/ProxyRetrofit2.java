@@ -1,5 +1,6 @@
 package com.example.libnet.helper;
 
+
 import com.example.libnet.BaseProtocol;
 import com.example.libnet.INetConfig;
 import com.example.libnet.IProtocolCallback;
@@ -10,8 +11,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Headers;
+import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -32,7 +35,7 @@ import retrofit2.http.Url;
  *
  * 网络代理类 用Retrofit实现
  */
-public class ProxyRetrofit2 extends BaseProxyNet{
+public class ProxyRetrofit2 extends BaseProxyNet {
 
     /**
      * 回调池
@@ -117,6 +120,11 @@ public class ProxyRetrofit2 extends BaseProxyNet{
         mRetrofit = new Retrofit.Builder()
             .baseUrl(config.getBaseUrl())
             .addConverterFactory(new ByteConverter())
+            .client(new OkHttpClient.Builder()
+                .connectTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .build())
             .build();
     }
 
@@ -149,7 +157,8 @@ public class ProxyRetrofit2 extends BaseProxyNet{
                     }
                 }
                 try {
-                    callback.onResponse(protocol, new HttpResponse(response.code(), response.body().bytes(), heads));
+                    ResponseBody body = response.body();
+                    callback.onResponse(protocol, new HttpResponse(response.code(), body == null ? null : body.bytes(), heads));
                 } catch (IOException e) {
                     callback.onError(protocol, e);
                 }

@@ -1,5 +1,6 @@
 package com.example.libnet;
 
+import com.example.libnet.http.EnumProtocolStatus;
 import com.example.libnet.http.HttpResponse;
 
 /**
@@ -12,7 +13,7 @@ public interface IProtocolCallback {
      * @param protocol 本次协议对象
      * @param response   返回类实体
      */
-    void onResponse(BaseProtocol protocol, HttpResponse response);
+    void onResponse(com.example.libnet.BaseProtocol protocol, HttpResponse response);
 
     /**
      * 请求出错
@@ -20,5 +21,13 @@ public interface IProtocolCallback {
      * @param protocol 本次协议对象
      * @param throwable 异常信息
      */
-    void onError(BaseProtocol protocol, Throwable throwable);
+    void onError(com.example.libnet.BaseProtocol protocol, Throwable throwable);
+
+    /**
+     * 请求协议的状态变更
+     *
+     * @param protocol
+     * @param status
+     */
+    void onStatusChange(com.example.libnet.BaseProtocol protocol, EnumProtocolStatus status);
 }

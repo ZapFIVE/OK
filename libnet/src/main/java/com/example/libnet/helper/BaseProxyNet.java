@@ -1,5 +1,6 @@
 package com.example.libnet.helper;
 
+
 import com.example.libnet.BaseProtocol;
 import com.example.libnet.INetConfig;
 import com.example.libnet.IProtocolCallback;
@@ -11,7 +12,7 @@ import com.example.libnet.http.HttpRequest;
  *
  * 网络代理基类
  */
-public abstract class BaseProxyNet implements IProxyNet{
+public abstract class BaseProxyNet implements IProxyNet {
 
     /**
      * 构造函数

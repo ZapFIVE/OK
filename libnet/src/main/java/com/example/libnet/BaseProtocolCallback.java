@@ -5,5 +5,5 @@ package com.example.libnet;
  *
  * 协议操作的回调
  */
-public abstract class BaseProtocolCallback implements IProtocolCallback{
+public abstract class BaseProtocolCallback implements com.example.libnet.IProtocolCallback {
 }

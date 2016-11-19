@@ -17,11 +17,11 @@ import java.util.HashMap;
  *  协议基类
  * @param <T>
  */
-public abstract class BaseProtocol<T> implements INetConfig{
+public abstract class BaseProtocol<T> implements com.example.libnet.INetConfig {
     /**
      * 默认配置
      */
-    private final INetConfig mConfig;
+    private final com.example.libnet.INetConfig mConfig;
 
     /**
      * 本次协议的标签
@@ -56,7 +56,7 @@ public abstract class BaseProtocol<T> implements INetConfig{
      *
      * @param config 默认网络配置
      */
-    public BaseProtocol(INetConfig config) {
+    public BaseProtocol(com.example.libnet.INetConfig config) {
         if (config == null) {
             throw new NullPointerException("INetConfig can not be null!");
         }
@@ -65,7 +65,7 @@ public abstract class BaseProtocol<T> implements INetConfig{
         mIsFromCache = mConfig.isFromCache();
         mIsUiResponse = mConfig.isUIResponse();
 
-        NetHelper.INSTANCE.init(config);
+        com.example.libnet.NetHelper.INSTANCE.init(config);
     }
 
     @NonNull
@@ -91,12 +91,6 @@ public abstract class BaseProtocol<T> implements INetConfig{
         return mConfig.getConverterStrategy();
     }
 
-    @NonNull
-    @Override
-    public final String getLibNet() {
-        return mConfig.getLibNet();
-    }
-
     @Override
     public boolean isFromCache() {
         return mIsFromCache;
@@ -105,6 +99,11 @@ public abstract class BaseProtocol<T> implements INetConfig{
     @Override
     public ICache getCacheStrategy() {
         return mConfig.getCacheStrategy();
+    }
+
+    @Override
+    public final com.example.libnet.IInterceptor getInterceptor() {
+        return mConfig.getInterceptor();
     }
 
     /**
@@ -167,6 +166,26 @@ public abstract class BaseProtocol<T> implements INetConfig{
         mHeadMaps.put(key, value);
 
         return true;
+    }
+
+    /**
+     * 获取http表头信息
+     *
+     * @param key
+     * @return
+     */
+    public String getHead(String key) {
+        return mHeadMaps != null ? mHeadMaps.get(key) : null;
+    }
+
+    /**
+     * 是否含有http 头
+     *
+     * @param key
+     * @return
+     */
+    public boolean containHead(String key) {
+        return mHeadMaps != null && mHeadMaps.containsKey(key);
     }
 
     /**
@@ -266,12 +285,12 @@ public abstract class BaseProtocol<T> implements INetConfig{
      * @param request 请求类型 get post ...
      * @param callback  请求回调
      */
-    public void request(EnumRequest request, BaseProtocolCallback callback) {
+    protected void requestReal(EnumRequest request, com.example.libnet.BaseProtocolCallback callback) {
         String baseUrl = mConfig.getBaseUrl();
         if (TextUtils.isEmpty(baseUrl)) {
             throw new NullPointerUrlException("BaseUrl can not be null or empty");
         }
-        request(request, mConfig.getBaseUrl() + getPath(), callback);
+        requestReal(request, mConfig.getBaseUrl() + getPath(), callback);
     }
 
     /**
@@ -281,7 +300,7 @@ public abstract class BaseProtocol<T> implements INetConfig{
      * @param url 请求地址
      * @param callback    请求回调
      */
-    public void request(final EnumRequest request, final String url, final BaseProtocolCallback callback) {
+    protected void requestReal(final EnumRequest request, final String url, final com.example.libnet.BaseProtocolCallback callback) {
         requestFromProxyNet(request, url, callback);
     }
 
@@ -292,7 +311,7 @@ public abstract class BaseProtocol<T> implements INetConfig{
      * @param url 请求地址
      * @param callback    请求回调
      */
-    private void requestFromProxyNet(EnumRequest request, String url, BaseProtocolCallback callback) {
+    private void requestFromProxyNet(EnumRequest request, String url, com.example.libnet.BaseProtocolCallback callback) {
         HttpRequest opt = new HttpRequest.Builder(request, url)
             .setHeadMaps(mHeadMaps)
             .setParamMaps(mParamMaps)

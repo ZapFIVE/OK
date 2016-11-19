@@ -83,7 +83,7 @@ public class HttpResponse implements Parcelable {
         this.mHeaders = (HashMap<String, String>) in.readSerializable();
     }
 
-    public static final Parcelable.Creator<HttpResponse> CREATOR = new Parcelable.Creator<HttpResponse>() {
+    public static final Creator<HttpResponse> CREATOR = new Creator<HttpResponse>() {
         @Override
         public HttpResponse createFromParcel(Parcel source) {
             return new HttpResponse(source);

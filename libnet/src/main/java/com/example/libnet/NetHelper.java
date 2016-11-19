@@ -1,18 +1,25 @@
 package com.example.libnet;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
+import com.example.libnet.exception.net.NoNetException;
 import com.example.libnet.exception.opt.IllegalLibNetException;
 import com.example.libnet.exception.opt.NoneCacheException;
 import com.example.libnet.exception.opt.NullPointerCacheException;
 import com.example.libnet.helper.BaseProxyNet;
 import com.example.libnet.http.EnumPriority;
+import com.example.libnet.http.EnumProtocolStatus;
 import com.example.libnet.http.HttpRequest;
 import com.example.libnet.http.HttpResponse;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -21,14 +28,19 @@ import java.util.concurrent.Executors;
  *
  * 网络操作帮助类
  */
-public enum  NetHelper implements IProxyNet{
+public enum  NetHelper implements com.example.libnet.IProxyNet {
     INSTANCE;
+
+    /**
+     * 回调池
+     */
+    private final ConcurrentHashMap<String, BaseProtocolCallbackWrapper> mCallbackCache = new ConcurrentHashMap<>();
 
 
     /**
      * 优先级线程池
      */
-    private HashMap<EnumPriority, IProxyNet> mProxyNets;
+    private HashMap<EnumPriority, com.example.libnet.IProxyNet> mProxyNets;
 
     /**
      * 线程池
@@ -49,16 +61,16 @@ public enum  NetHelper implements IProxyNet{
      *
      * @param config  网络配置
      */
-    public synchronized void init(INetConfig config) {
+    public synchronized void init(com.example.libnet.INetConfig config) {
         if (!mIsInit) {
             mIsInit = true;
 
             mProxyNets = new HashMap<>();
 
             try {
-                Class cls = Class.forName(BaseProxyNet.class.getPackage().getName() + ".Proxy" + config.getLibNet());
+                Class cls = Class.forName(BaseProxyNet.class.getPackage().getName() + ".Proxy" + config.getContext().getString(R.string.lib_net));
                 // 方法传入的类型
-                Class[] paramTypes = {INetConfig.class};
+                Class[] paramTypes = {com.example.libnet.INetConfig.class};
                 // 方法传入的参数
                 Object[] params = {config};
                 // 创建构造器
@@ -66,7 +78,7 @@ public enum  NetHelper implements IProxyNet{
 
                 // 生成对应优先级的线程池
                 for (EnumPriority priority : EnumPriority.values()) {
-                    IProxyNet proxyNet = (IProxyNet) constructor.newInstance(params);
+                    com.example.libnet.IProxyNet proxyNet = (com.example.libnet.IProxyNet) constructor.newInstance(params);
                     mProxyNets.put(priority, proxyNet);
                 }
             } catch (Exception e) {
@@ -78,24 +90,57 @@ public enum  NetHelper implements IProxyNet{
 
 
     @Override
-    public void cancel(BaseProtocol protocol) {
+    public void cancel(com.example.libnet.BaseProtocol protocol) {
+        // 加入回调池
+        BaseProtocolCallbackWrapper call = mCallbackCache.remove(protocol.getProtocolCacheKey());
+        if (call != null && !call.isExecuted() && !call.isCanceled()) {
+            call.cancel(protocol);
+        }
+
         mProxyNets.get(protocol.getPriority()).cancel(protocol);
     }
 
     @Override
-    public void request(final BaseProtocol protocol, final HttpRequest request, final IProtocolCallback callback) {
+    public void request(final com.example.libnet.BaseProtocol protocol, final HttpRequest request, final com.example.libnet.IProtocolCallback callback) {
         // 防止耗时操作
         mCacheExecutor.execute(new Runnable() {
             @Override
             public void run() {
-                // 从缓存中获取
-                if (protocol.isFromCache()) {
-                    requestFromCache(protocol, request, callback);
-                } else {
-                    requestFromNet(protocol, request, callback);
+                // 拦截器处理
+                if (!requestFromInterceptor(protocol, request, callback)) {
+                    // 从缓存中获取
+                    if (protocol.isFromCache()) {
+                        requestFromCache(protocol, request, callback);
+                    } else {
+                        requestFromNet(protocol, request, callback);
+                    }
                 }
             }
         });
+    }
+
+    /**
+     * 从拦截器中操作
+     *
+     * @param protocol
+     * @param request
+     * @param callback
+     * @return 是否被拦截器拦截
+     */
+    private boolean requestFromInterceptor(final com.example.libnet.BaseProtocol protocol, final HttpRequest request, final com.example.libnet.IProtocolCallback callback) {
+        com.example.libnet.IInterceptor interceptor = protocol.getInterceptor();
+
+        if (interceptor != null) {
+            BaseProtocolCallbackWrapper wrapper = new BaseProtocolCallbackWrapper(callback);
+            // 加入回调池
+            mCallbackCache.put(protocol.getProtocolCacheKey(), wrapper);
+            // 通知请求开始了
+            wrapper.onStatusChange(protocol, EnumProtocolStatus.PROTOCOL_BEGIN);
+            interceptor.request(protocol, request, wrapper);
+
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -105,9 +150,15 @@ public enum  NetHelper implements IProxyNet{
      * @param request  请求类型
      * @param callback 请求回调
      */
-    private void requestFromCache(final BaseProtocol protocol, final HttpRequest request, final IProtocolCallback callback) {
+    private void requestFromCache(final com.example.libnet.BaseProtocol protocol, final HttpRequest request, final com.example.libnet.IProtocolCallback callback) {
         ICache cache = protocol.getCacheStrategy();
         BaseProtocolCallbackWrapper wrapper = new BaseProtocolCallbackWrapper(callback);
+
+        // 加入回调池
+        mCallbackCache.put(protocol.getProtocolCacheKey(), wrapper);
+        // 通知请求开始了
+        wrapper.onStatusChange(protocol, EnumProtocolStatus.PROTOCOL_BEGIN);
+
         // 没有缓存策略
         if (cache == null) {
             wrapper.onError(protocol, new NullPointerCacheException("ICache is null, cannot from cache"));
@@ -128,25 +179,39 @@ public enum  NetHelper implements IProxyNet{
      * @param request  请求类型
      * @param callback 请求回调
      */
-    private void requestFromNet(final BaseProtocol protocol, final HttpRequest request, final IProtocolCallback callback) {
+    private void requestFromNet(final com.example.libnet.BaseProtocol protocol, final HttpRequest request, final com.example.libnet.IProtocolCallback callback) {
         // 检查网络代理类
         if (mProxyNets == null || mProxyNets.isEmpty()) {
             throw new IllegalLibNetException("error, check it; not found proxy net");
         }
 
+        CacheBaseProtocolCallbackWrapper wrapper = new CacheBaseProtocolCallbackWrapper(request, callback);
+        // 加入回调池
+        mCallbackCache.put(protocol.getProtocolCacheKey(), wrapper);
+        // 通知请求开始了
+        wrapper.onStatusChange(protocol, EnumProtocolStatus.PROTOCOL_BEGIN);
+
+        // 检测网络
+        ConnectivityManager cm = (ConnectivityManager) protocol.getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = cm.getActiveNetworkInfo();
+        if (activeNetworkInfo == null || !activeNetworkInfo.isAvailable()) {
+            wrapper.onError(protocol, new NoNetException());
+            return;
+        }
+
         // 发起请求
-        mProxyNets.get(protocol.getPriority()).request(protocol, request, new CacheBaseProtocolCallbackWrapper(request, callback));
+        mProxyNets.get(protocol.getPriority()).request(protocol, request, wrapper);
     }
 
     private class CacheBaseProtocolCallbackWrapper extends BaseProtocolCallbackWrapper {
         private final HttpRequest mRequest;
-        public CacheBaseProtocolCallbackWrapper(HttpRequest request, IProtocolCallback callback) {
+        public CacheBaseProtocolCallbackWrapper(HttpRequest request, com.example.libnet.IProtocolCallback callback) {
             super(callback);
             mRequest = request;
         }
 
         @Override
-        public void onResponse(BaseProtocol protocol, final HttpResponse response) {
+        public void onResponse(com.example.libnet.BaseProtocol protocol, final HttpResponse response) {
             super.onResponse(protocol, response);
             final ICache cache = protocol.getCacheStrategy();
             // 缓存
@@ -169,26 +234,39 @@ public enum  NetHelper implements IProxyNet{
     /**
      * 协议操作的回调包装
      */
-    private class BaseProtocolCallbackWrapper implements IProtocolCallback{
+    private class BaseProtocolCallbackWrapper implements com.example.libnet.IProtocolCallback {
 
-        private final IProtocolCallback mCallback;
+        /**
+         * 回调
+         */
+        private final com.example.libnet.IProtocolCallback mCallback;
 
-        public BaseProtocolCallbackWrapper(IProtocolCallback callback) {
+        /**
+         * 是否已经取消
+         */
+        protected boolean mIsCanceled = false;
+
+        /**
+         * 是否已经执行了
+         */
+        protected boolean mIsExecuted = false;
+
+        public BaseProtocolCallbackWrapper(com.example.libnet.IProtocolCallback callback) {
             mCallback = callback;
         }
 
         @Override
-        public void onResponse(final BaseProtocol protocol, final HttpResponse response) {
+        public void onResponse(final com.example.libnet.BaseProtocol protocol, final HttpResponse response) {
             // 直接运行
             if (isRunDirect(protocol)) {
-                mCallback.onResponse(protocol, response);
+                onRealOnResponse(protocol, response);
             }
             // 在UI上运行
             else if (protocol.isUIResponse() && !isThreadInUI()) {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        mCallback.onResponse(protocol, response);
+                        onRealOnResponse(protocol, response);
                     }
                 });
             }
@@ -197,24 +275,24 @@ public enum  NetHelper implements IProxyNet{
                 mCacheExecutor.execute(new Runnable() {
                     @Override
                     public void run() {
-                        mCallback.onResponse(protocol, response);
+                        onRealOnResponse(protocol, response);
                     }
                 });
             }
         }
 
         @Override
-        public void onError(final BaseProtocol protocol, final Throwable throwable) {
+        public void onError(final com.example.libnet.BaseProtocol protocol, final Throwable throwable) {
             // 直接运行
             if (isRunDirect(protocol)) {
-                mCallback.onError(protocol, throwable);
+                onRealOnError(protocol, throwable);
             }
             // 在UI上运行
             else if (protocol.isUIResponse() && !isThreadInUI()) {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        mCallback.onError(protocol, throwable);
+                        onRealOnError(protocol, throwable);
                     }
                 });
             }
@@ -223,10 +301,146 @@ public enum  NetHelper implements IProxyNet{
                 mCacheExecutor.execute(new Runnable() {
                     @Override
                     public void run() {
-                        mCallback.onError(protocol, throwable);
+                        onRealOnError(protocol, throwable);
                     }
                 });
             }
+        }
+
+        @Override
+        public void onStatusChange(final com.example.libnet.BaseProtocol protocol, final EnumProtocolStatus status) {
+            // 直接运行
+            if (isRunDirect(protocol)) {
+                onRealStatusChange(protocol, status);
+            }
+            // 在UI上运行
+            else if (protocol.isUIResponse() && !isThreadInUI()) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        onRealStatusChange(protocol, status);
+                    }
+                });
+            }
+            // 在线程上运行
+            else {
+                mCacheExecutor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        onRealStatusChange(protocol, status);
+                    }
+                });
+            }
+        }
+
+        /**
+         * 是否已经取消
+         *
+         * @return
+         */
+        public boolean isCanceled() {
+            synchronized (this) {
+                return mIsCanceled;
+            }
+        }
+
+        /**
+         * 是否已经执行了
+         *
+         * @return
+         */
+        public boolean isExecuted() {
+            synchronized (this) {
+                return mIsExecuted;
+            }
+        }
+
+        /**
+         * 设置已经执行了
+         * @return 是否第一次执行成功
+         */
+        private boolean setExecuted() {
+            synchronized (this) {
+                if (mIsCanceled || mIsExecuted) {
+                    return false;
+                }
+
+                this.mIsExecuted = true;
+
+                return true;
+            }
+        }
+
+        /**
+         * 设置已经取消了
+         * @return 是否第一次取消成功
+         */
+        private boolean setCancel() {
+            synchronized (this) {
+                if (mIsExecuted || mIsCanceled) {
+                    return false;
+                }
+                this.mIsCanceled = true;
+
+                return true;
+            }
+        }
+
+        /**
+         * 设置取消
+         * @param protocol  协议
+         */
+        public void cancel(final com.example.libnet.BaseProtocol protocol) {
+            if (setCancel()) {
+                // 通知协议结束
+                onStatusChange(protocol, EnumProtocolStatus.PROTOCOL_CANCEL);
+            }
+        }
+
+        /**
+         * 实际执行的正确回调
+         *
+         * @param protocol
+         * @param response
+         */
+        private void onRealOnResponse(final com.example.libnet.BaseProtocol protocol, final HttpResponse response){
+            if (setExecuted()) {
+                // 从回调池中清除
+                mCallbackCache.remove(protocol.getProtocolCacheKey());
+                mCallback.onResponse(protocol, response);
+
+                // 通知协议结束
+                onStatusChange(protocol, EnumProtocolStatus.PROTOCOL_END);
+            }
+        }
+
+        /**
+         * 实际执行的错误回调
+         *
+         * @param protocol
+         * @param throwable
+         */
+        private void onRealOnError(final com.example.libnet.BaseProtocol protocol, final Throwable throwable) {
+            if (setExecuted()) {
+                // 从回调池中清除
+                mCallbackCache.remove(protocol.getProtocolCacheKey());
+
+                mCallback.onError(protocol, throwable);
+                // 通知协议结束
+                onStatusChange(protocol, EnumProtocolStatus.PROTOCOL_END);
+            }
+        }
+
+        /**
+         * 实际执行的状态回调
+         *
+         * @param protocol
+         * @param status
+         */
+        private void onRealStatusChange(final com.example.libnet.BaseProtocol protocol, final EnumProtocolStatus status) {
+
+            Log.d("net_test", protocol.getPath() + "," + status.toString());
+            mCallback.onStatusChange(protocol, status);
         }
 
         /**
@@ -244,7 +458,7 @@ public enum  NetHelper implements IProxyNet{
          * @param protocol
          * @return
          */
-        protected boolean isRunDirect(final BaseProtocol protocol) {
+        protected boolean isRunDirect(final com.example.libnet.BaseProtocol protocol) {
             boolean isOkInUI = isThreadInUI() && protocol.isUIResponse();
             boolean isOkInNonUI = !isThreadInUI() && !protocol.isUIResponse();
 

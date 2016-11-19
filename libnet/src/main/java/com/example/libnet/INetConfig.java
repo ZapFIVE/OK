@@ -53,11 +53,11 @@ public interface INetConfig {
      */
     @NonNull
     IConverter getConverterStrategy();
+
     /**
-     * 获取执行网络操作的封装库
+     * 获取拦截器
      *
      * @return
      */
-    @NonNull
-    String getLibNet();
+    IInterceptor getInterceptor();
 }

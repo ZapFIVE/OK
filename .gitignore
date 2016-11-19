@@ -41,9 +41,6 @@ captures/
 .idea/workspace.xml
 .idea/libraries
 
-# Keystore files
-*.jks
-
 ### Android Patch ###
 gen-external-apklibs
 /.idea/
