@@ -1,1 +1,1 @@
-include ':app', ':libnet', ':libcommon'
+include ':app', ':libnet', ':libcommon', ':libutils'
