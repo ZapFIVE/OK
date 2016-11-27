@@ -1,9 +1,12 @@
 // 公共库
 apply plugin: 'com.android.library'
 
+// 添加工具库
+apply from: '../tasks/utils.gradle'
+
 android {
-    // 设置默认没有发布类型
-    publishNonDefault true
+    // 修改默认的发布config
+    defaultPublishConfig(getCurrentFlavor(project.name, "release"))
 
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -38,5 +41,10 @@ dependencies {
     // 支持multidex
     compile 'com.android.support:multidex:1.0.1'
 
-    compile project(":libutils")
+    // 添加工具库
+    compile project(path: ":libutils")
+    // 添加网络库
+    compile project(path: ":libnet")
+    // 添加图片库
+    compile project(path: ":libimg")
 }

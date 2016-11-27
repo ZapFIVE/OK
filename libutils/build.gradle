@@ -1,9 +1,11 @@
 // 公共库
 apply plugin: 'com.android.library'
+// 添加工具库
+apply from: '../tasks/utils.gradle'
 
 android {
-    // 设置默认没有发布类型
-    publishNonDefault true
+    // 修改默认的发布config
+    defaultPublishConfig(getCurrentFlavor(project.name, "release"))
 
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion

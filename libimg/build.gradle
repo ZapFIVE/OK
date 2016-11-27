@@ -1,12 +1,18 @@
+// 公共库
 apply plugin: 'com.android.library'
+// 添加工具库
+apply from: '../tasks/utils.gradle'
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion "25.0.0"
+    // 修改默认的发布config
+    defaultPublishConfig(getCurrentFlavor(project.name, "glideRelease"))
+
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 24
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
 
@@ -17,6 +23,25 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    productFlavors {
+        glide {
+            resValue("string","lib_img","Glide")
+
+            dependencies {
+                glideCompile fileTree(dir: 'src/glide/libs', include: ['*.jar'])
+                glideCompile 'com.github.bumptech.glide:glide:3.7.0'
+                glideCompile 'com.android.support:support-v4:25.0.0'
+            }
+        }
+
+        uil {
+            resValue("string","lib_img","Uil")
+            dependencies {
+                uilCompile fileTree(dir: 'src/uil/libs', include: ['*.jar'])
+            }
         }
     }
 }
