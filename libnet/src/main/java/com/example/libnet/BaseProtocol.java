@@ -312,7 +312,22 @@ public abstract class BaseProtocol<T> implements com.example.libnet.INetConfig {
      * @param callback    请求回调
      */
     private void requestFromProxyNet(EnumRequest request, String url, com.example.libnet.BaseProtocolCallback callback) {
-        HttpRequest opt = new HttpRequest.Builder(request, url)
+        // get 与 delete 需要转换 body 成 params
+        if (request == EnumRequest.GET
+                || request == EnumRequest.DELETE) {
+            T body = mBody;
+            if (body != null) {
+                @SuppressWarnings("unchecked") HashMap<String, Object> params = mConfig.getConverterStrategy().bodyToParamsConverter(mBody);
+                if (params != null) {
+                    for (HashMap.Entry<String, Object> entry : params.entrySet()) {
+                        putParams(entry.getKey(), String.valueOf(entry.getValue()));
+                    }
+                }
+
+                mBody = null;
+            }
+        }
+        @SuppressWarnings("unchecked") HttpRequest opt = new HttpRequest.Builder(request, url)
             .setHeadMaps(mHeadMaps)
             .setParamMaps(mParamMaps)
             .setBody(mConfig.getConverterStrategy().requestBodyConverter(mBody))

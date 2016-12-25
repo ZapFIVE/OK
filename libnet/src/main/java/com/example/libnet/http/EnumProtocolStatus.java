@@ -7,6 +7,10 @@ package com.example.libnet.http;
  */
 public enum  EnumProtocolStatus {
     /**
+     * 默认协议，尚未进行初始化 该状态无回调
+     */
+    PROTOCOL_DEFAULT,
+    /**
      * 协议开始
      */
     PROTOCOL_BEGIN,

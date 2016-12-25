@@ -1,5 +1,7 @@
 package com.example.libnet;
 
+import java.util.HashMap;
+
 /**
  * Created by whr on 2016/10/9.
  *
@@ -14,4 +16,12 @@ public interface IConverter<T> {
      * @return 字节数组
      */
     byte[] requestBodyConverter(T body);
+
+    /**
+     * 将body转换成params
+     *
+     * @param body
+     * @return
+     */
+    HashMap<String, Object> bodyToParamsConverter(T body);
 }
