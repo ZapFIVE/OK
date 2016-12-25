@@ -33,42 +33,42 @@ public class DelegateManager extends BaseManager<BaseDelegate> {
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState, View root) {
+    public synchronized void onCreate(Bundle savedInstanceState, View root) {
         super.onCreate(savedInstanceState, root);
 
         mPresenter.onCreate(savedInstanceState, root);
     }
 
     @Override
-    public void onStart() {
+    public synchronized void onStart() {
         super.onStart();
 
         mPresenter.onStart();
     }
 
     @Override
-    public void onStop() {
+    public synchronized void onStop() {
         super.onStop();
 
         mPresenter.onStop();
     }
 
     @Override
-    public void onResume() {
+    public synchronized void onResume() {
         super.onResume();
 
         mPresenter.onResume();
     }
 
     @Override
-    public void onPause() {
+    public synchronized void onPause() {
         super.onPause();
 
         mPresenter.onPause();
     }
 
     @Override
-    public void onDestroy() {
+    public synchronized void onDestroy() {
         super.onDestroy();
 
         mPresenter.onDestroy();
@@ -78,14 +78,14 @@ public class DelegateManager extends BaseManager<BaseDelegate> {
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public synchronized void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         mPresenter.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public synchronized void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
         mPresenter.onSaveInstanceState(outState);

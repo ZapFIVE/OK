@@ -51,63 +51,97 @@ public abstract class BaseActivity extends FragmentActivity implements IHostCont
         // 初始化Delegate
         initDelegate();
 
-
         // 延迟执行onCreate初始化 防止与setContentView 冲突
-        mHandler.postDelayed(new Runnable() {
+        mHandler.post(new Runnable() {
             @Override
             public void run() {
                 mDelegate.onCreate(savedInstanceState, getWindow().getDecorView());
             }
-        }, 0);
+        });
     }
 
     @Override
     protected void onStart() {
         super.onStart();
 
-        mDelegate.onStart();
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onStart();
+            }
+        });
     }
 
     @Override
     protected void onStop() {
         super.onStop();
 
-        mDelegate.onStop();
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onStop();
+            }
+        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        mDelegate.onResume();
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onResume();
+            }
+        });
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 
-        mDelegate.onPause();
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onPause();
+            }
+        });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
 
-        mDelegate.onDestroy();
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onDestroy();
+            }
+        });
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        mDelegate.onActivityResult(requestCode, resultCode, data);
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onActivityResult(requestCode, resultCode, data);
+            }
+        });
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(final Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        mDelegate.onSaveInstanceState(outState);
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onSaveInstanceState(outState);
+            }
+        });
     }
 
     /**
